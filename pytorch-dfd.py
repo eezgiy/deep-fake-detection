@@ -149,17 +149,17 @@ def save_metrics_to_file(epoch, train_loss, train_accuracy, train_precision, tra
                          test_loss, test_accuracy, test_precision, test_recall, test_f1, filename="metrics.csv"):
     # Metrikleri bir sözlükte topluyoruz
     metrics = {
-        'Epoch': [epoch+1],
-        'Train Loss': [train_loss],
-        'Train Accuracy': [train_accuracy],
-        'Train Precision': [train_precision],
-        'Train Recall': [train_recall],
-        'Train F1 Score': [train_f1],
-        'Test Loss': [test_loss],
-        'Test Accuracy': [test_accuracy],
-        'Test Precision': [test_precision],
-        'Test Recall': [test_recall],
-        'Test F1 Score': [test_f1]
+        'Epoch': [epoch],
+        'Train Loss': [round(train_loss, 2)],
+        'Train Accuracy': [round(train_accuracy, 2)],
+        'Train Precision': [round(train_precision, 2)],
+        'Train Recall': [round(train_recall, 2)],
+        'Train F1 Score': [round(train_f1, 2)],
+        'Test Loss': [round(test_loss, 2)],
+        'Test Accuracy': [round(test_accuracy, 2)],
+        'Test Precision': [round(test_precision, 2)],
+        'Test Recall': [round(test_recall, 2)],
+        'Test F1 Score': [round(test_f1, 2)]
     }
 
     # Pandas DataFrame oluşturuyoruz
