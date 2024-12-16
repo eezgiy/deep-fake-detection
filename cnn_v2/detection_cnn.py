@@ -13,3 +13,19 @@ datagen = ImageDataGenerator(
     rescale=1.0/255,           
     validation_split=0.2    
 )
+
+train_data = datagen.flow_from_directory(
+    data_dir,
+    target_size=(img_height, img_width),
+    batch_size=batch_size,
+    class_mode='binary',        
+    subset='training'           
+)
+
+val_data = datagen.flow_from_directory(
+    data_dir,
+    target_size=(img_height, img_width),
+    batch_size=batch_size,
+    class_mode='binary',      
+    subset='validation'         
+)
