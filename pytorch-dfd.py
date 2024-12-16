@@ -7,6 +7,7 @@ from torchvision import datasets, transforms
 from torchvision import models
 from tqdm import tqdm
 from sklearn.metrics import precision_score, recall_score, f1_score
+import pandas as pd
 
 # Argparse kullanarak komut satırından veri seti yolu alıyoruz
 parser = argparse.ArgumentParser(description="Deep Fake Detection using CNN with PyTorch")
@@ -142,6 +143,30 @@ def test_model():
 
     return avg_loss, accuracy, precision, recall, f1
 
+# Çıktıları dosyaya yazmak için
+def save_metrics_to_file(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
+                         test_loss, test_accuracy, test_precision, test_recall, test_f1, filename="metrics.csv"):
+    # Metrikleri bir sözlükte topluyoruz
+    metrics = {
+        'Epoch': [epoch+1],
+        'Train Loss': [train_loss],
+        'Train Accuracy': [train_accuracy],
+        'Train Precision': [train_precision],
+        'Train Recall': [train_recall],
+        'Train F1 Score': [train_f1],
+        'Test Loss': [test_loss],
+        'Test Accuracy': [test_accuracy],
+        'Test Precision': [test_precision],
+        'Test Recall': [test_recall],
+        'Test F1 Score': [test_f1]
+    }
+
+    # Pandas DataFrame oluşturuyoruz
+    df = pd.DataFrame(metrics)
+
+    # Eğer dosya yoksa, başlıkları yazıyoruz; varsa, ekliyoruz
+    df.to_csv(filename, mode='a', header=not pd.io.common.file_exists(filename), index=False)
+
 # Modeli eğitiyoruz ve doğruluyoruz
 num_epochs = 10
 for epoch in range(num_epochs):
@@ -149,11 +174,12 @@ for epoch in range(num_epochs):
 
     # Eğitim adımı
     train_loss, train_accuracy, train_precision, train_recall, train_f1 = train_model()
-    print(f"Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, Train Precision: {train_precision:.4f}, Train Recall: {train_recall:.4f}, Train F1 Score: {train_f1:.4f}")
 
     # Test adımı
     test_loss, test_accuracy, test_precision, test_recall, test_f1 = test_model()
-    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}, Test Precision: {test_precision:.4f}, Test Recall: {test_recall:.4f}, Test F1 Score: {test_f1:.4f}")
 
-# Modeli kaydedebiliriz
-# torch.save(model.state_dict(), "deep_fake_detector.pth")
+    # Çıktıları dosyaya kaydediyoruz
+    save_metrics_to_file(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
+                         test_loss, test_accuracy, test_precision, test_recall, test_f1)
+    print(f"Epoch {epoch+1} metrikleri dosyaya kaydedildi.")
+
