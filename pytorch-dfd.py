@@ -2,10 +2,11 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torchvision import models
 from tqdm import tqdm
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 # Argparse kullanarak komut satırından veri seti yolu alıyoruz
 parser = argparse.ArgumentParser(description="Deep Fake Detection using CNN with PyTorch")
@@ -69,6 +70,8 @@ def train_model():
     running_loss = 0.0
     correct_preds = 0
     total_preds = 0
+    all_preds = []
+    all_labels = []
 
     for inputs, labels in tqdm(train_loader):
         inputs, labels = inputs.to(device), labels.to(device)
@@ -88,9 +91,19 @@ def train_model():
         correct_preds += (predicted == labels).sum().item()
         total_preds += labels.size(0)
 
+        # Tahminleri ve etiketleri topluyoruz
+        all_preds.extend(predicted.cpu().numpy())
+        all_labels.extend(labels.cpu().numpy())
+
     avg_loss = running_loss / len(train_loader)
     accuracy = correct_preds / total_preds
-    return avg_loss, accuracy
+
+    # Precision, Recall, F1 Score
+    precision = precision_score(all_labels, all_preds)
+    recall = recall_score(all_labels, all_preds)
+    f1 = f1_score(all_labels, all_preds)
+
+    return avg_loss, accuracy, precision, recall, f1
 
 # Test döngüsü
 def test_model():
@@ -98,6 +111,8 @@ def test_model():
     running_loss = 0.0
     correct_preds = 0
     total_preds = 0
+    all_preds = []
+    all_labels = []
 
     with torch.no_grad():
         for inputs, labels in tqdm(test_loader):
@@ -113,9 +128,19 @@ def test_model():
             correct_preds += (predicted == labels).sum().item()
             total_preds += labels.size(0)
 
+            # Tahminleri ve etiketleri topluyoruz
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
     avg_loss = running_loss / len(test_loader)
     accuracy = correct_preds / total_preds
-    return avg_loss, accuracy
+
+    # Precision, Recall, F1 Score
+    precision = precision_score(all_labels, all_preds)
+    recall = recall_score(all_labels, all_preds)
+    f1 = f1_score(all_labels, all_preds)
+
+    return avg_loss, accuracy, precision, recall, f1
 
 # Modeli eğitiyoruz ve doğruluyoruz
 num_epochs = 10
@@ -123,12 +148,12 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs}")
 
     # Eğitim adımı
-    train_loss, train_accuracy = train_model()
-    print(f"Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}")
+    train_loss, train_accuracy, train_precision, train_recall, train_f1 = train_model()
+    print(f"Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, Train Precision: {train_precision:.4f}, Train Recall: {train_recall:.4f}, Train F1 Score: {train_f1:.4f}")
 
     # Test adımı
-    test_loss, test_accuracy = test_model()
-    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
+    test_loss, test_accuracy, test_precision, test_recall, test_f1 = test_model()
+    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}, Test Precision: {test_precision:.4f}, Test Recall: {test_recall:.4f}, Test F1 Score: {test_f1:.4f}")
 
 # Modeli kaydedebiliriz
 # torch.save(model.state_dict(), "deep_fake_detector.pth")
