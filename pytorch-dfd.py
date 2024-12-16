@@ -169,7 +169,7 @@ def save_metrics_to_file(epoch, train_loss, train_accuracy, train_precision, tra
     df.to_csv(filename, mode='a', header=not pd.io.common.file_exists(filename), index=False)
 
 # Modeli eğitiyoruz ve doğruluyoruz
-num_epochs = 10
+num_epochs = 20
 for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs}")
 
