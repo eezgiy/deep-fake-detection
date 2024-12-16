@@ -56,8 +56,8 @@ def evaluate_model(model, test_generator):
 
 # 5. Ana Fonksiyon
 if __name__ == '__main__':
-    train_dir = 'cnn_datasets\cnn_test'   # Eğitim verisi yolu
-    test_dir = 'cnn_datasets\cnn_train'    # Test verisi yolu
+    train_dir = 'cnn_datasets\\cnn_test'  # Egitim verisi yolu
+    test_dir = 'cnn_datasets\\cnn_train'  # Test verisi yolu
 
     # Veri hazırlığı
     train_generator, test_generator = prepare_data(train_dir, test_dir)
