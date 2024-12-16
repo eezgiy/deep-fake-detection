@@ -12,6 +12,7 @@ import pandas as pd
 # Argparse kullanarak komut satırından veri seti yolu alıyoruz
 parser = argparse.ArgumentParser(description="Deep Fake Detection using CNN with PyTorch")
 parser.add_argument('--dataset', type=str, required=True, help="Path to the dataset")
+parser.add_argument('--epochs', type=int, default=20, help="Number of epochs")
 args = parser.parse_args()
 
 # Veri seti yolunu alıyoruz
