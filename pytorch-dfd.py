@@ -8,6 +8,8 @@ from torchvision import models
 from tqdm import tqdm
 from sklearn.metrics import precision_score, recall_score, f1_score
 import pandas as pd
+from openpyxl import Workbook
+from openpyxl import load_workbook
 
 # Argparse kullanarak komut satırından veri seti yolu alıyoruz
 parser = argparse.ArgumentParser(description="Deep Fake Detection using CNN with PyTorch")
@@ -145,8 +147,8 @@ def test_model():
     return avg_loss, accuracy, precision, recall, f1
 
 # Çıktıları dosyaya yazmak için
-def save_metrics_to_file(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
-                         test_loss, test_accuracy, test_precision, test_recall, test_f1, filename="metrics.csv"):
+def save_metrics_to_excel(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
+                         test_loss, test_accuracy, test_precision, test_recall, test_f1, filename="metrics.xlsx"):
     # Metrikleri bir sözlükte topluyoruz
     metrics = {
         'Epoch': [epoch],
@@ -165,8 +167,17 @@ def save_metrics_to_file(epoch, train_loss, train_accuracy, train_precision, tra
     # Pandas DataFrame oluşturuyoruz
     df = pd.DataFrame(metrics)
 
-    # Eğer dosya yoksa, başlıkları yazıyoruz; varsa, ekliyoruz
-    df.to_csv(filename, mode='a', header=not pd.io.common.file_exists(filename), index=False)
+    # Excel dosyasını kontrol ediyoruz
+    try:
+        # Dosyayı açıyoruz, eğer varsa
+        book = load_workbook(filename)
+        writer = pd.ExcelWriter(filename, engine='openpyxl')
+        writer.book = book
+        df.to_excel(writer, index=False, header=False, startrow=book.active.max_row)
+        writer.save()
+    except FileNotFoundError:
+        # Dosya yoksa yeni oluşturuyoruz
+        df.to_excel(filename, index=False)
 
 # Modeli eğitiyoruz ve doğruluyoruz
 num_epochs = 20
@@ -180,7 +191,6 @@ for epoch in range(num_epochs):
     test_loss, test_accuracy, test_precision, test_recall, test_f1 = test_model()
 
     # Çıktıları dosyaya kaydediyoruz
-    save_metrics_to_file(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
+    save_metrics_to_excel(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
                          test_loss, test_accuracy, test_precision, test_recall, test_f1)
     print(f"Epoch {epoch+1} metrikleri dosyaya kaydedildi.")
-
