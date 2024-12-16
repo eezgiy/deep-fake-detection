@@ -40,7 +40,5 @@ model = Sequential([
     Flatten(),
     Dense(128, activation='relu'),
     Dropout(0.5),
-    Dense(64, activation='relu'), 
-    Dense(1, activation='softmax'),
-    Adam(learning_rate=0.001),  
+    Dense(1, activation='sigmoid')  
 ])
