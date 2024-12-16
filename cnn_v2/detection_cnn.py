@@ -42,3 +42,21 @@ model = Sequential([
     Dropout(0.5),
     Dense(1, activation='sigmoid')  
 ])
+
+model.summary()
+
+model.compile(
+    optimizer='adam',
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
+
+epochs = 10
+history = model.fit(
+    train_data,
+    validation_data=val_data,
+    epochs=epochs
+)
+
+model.save("deepfake_detection_model.h5")
+print("Model trained.")
