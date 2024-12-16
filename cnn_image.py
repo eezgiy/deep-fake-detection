@@ -2,7 +2,9 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
 import numpy as np
 
 # 1. Veri Setinin Hazırlanması (örneğin, ImageDataGenerator ile)
@@ -35,20 +37,27 @@ def train_model(model, train_generator, validation_generator, epochs=20):
     early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
     history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=[early_stopping])
 
-    return model
+    return model, history
 
 # 4. Modelin Değerlendirilmesi
 def evaluate_model(model, test_generator):
     y_pred = (model.predict(test_generator) > 0.5).astype('int32')
     y_true = test_generator.classes  # Gerçek etiketler
 
-    # Precision, Recall ve F1 Score hesaplama
+    # Precision, Recall, F1 Score hesaplama
+    print("Classification Report:")
     print(classification_report(y_true, y_pred))
+
+    # Accuracy ve F1 Score'ı manuel olarak hesaplama
+    accuracy = accuracy_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred)
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"F1 Score: {f1:.4f}")
 
 # 5. Ana Fonksiyon
 if __name__ == '__main__':
-    train_dir = 'path/to/train_data'  # Eğitim verisi yolu
-    test_dir = 'path/to/test_data'    # Test verisi yolu
+    train_dir = 'cnn_datasets\cnn_test'   # Eğitim verisi yolu
+    test_dir = 'cnn_datasets\cnn_train'    # Test verisi yolu
 
     # Veri hazırlığı
     train_generator, test_generator = prepare_data(train_dir, test_dir)
@@ -57,7 +66,7 @@ if __name__ == '__main__':
     model = build_model()
 
     # Modeli eğitme
-    model = train_model(model, train_generator, test_generator)
+    model, history = train_model(model, train_generator, test_generator)
 
     # Modeli değerlendirme
     evaluate_model(model, test_generator)
