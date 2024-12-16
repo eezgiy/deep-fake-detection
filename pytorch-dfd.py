@@ -8,18 +8,16 @@ from torchvision import models
 from tqdm import tqdm
 from sklearn.metrics import precision_score, recall_score, f1_score
 import pandas as pd
-from openpyxl import Workbook
-from openpyxl import load_workbook
 
 # Argparse kullanarak komut satırından veri seti yolu alıyoruz
 parser = argparse.ArgumentParser(description="Deep Fake Detection using CNN with PyTorch")
-parser.add_argument('--dataset', type=str, required=True, help="Path to the dataset")
+parser.add_argument('--dataset', type=str, default=r"C:\Users\eezgi\OneDrive\Masaüstü\Dataset", required=True, help="Path to the dataset")
 parser.add_argument('--epochs', type=int, default=20, help="Number of epochs")
 args = parser.parse_args()
 
 # Veri seti yolunu alıyoruz
-train_dir = args.dataset + '/cnn_train'  # Eğitim verisi yolu
-test_dir = args.dataset + '/cnn_test'    # Test verisi yolu
+train_dir = args.dataset + r'\Train'  # Eğitim verisi yolu
+test_dir = args.dataset + r'\Test'    # Test verisi yolu
 
 print(f"Training data directory: {train_dir}")
 print(f"Test data directory: {test_dir}")
@@ -27,8 +25,8 @@ print(f"Test data directory: {test_dir}")
 # Veri ön işleme ve augmentasyon
 train_transform = transforms.Compose([
     transforms.Resize((64, 64)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(20),
+    transforms.RandomHorizontalFlip(),  # Yatay çevirme
+    transforms.RandomRotation(10),      # Dönme
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # ImageNet'in ortalama ve std'si
 ])
@@ -51,11 +49,13 @@ test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 class DeepFakeDetector(nn.Module):
     def __init__(self):
         super(DeepFakeDetector, self).__init__()
-        self.model = models.resnet18(pretrained=True)
+        self.model = models.resnet18(pretrained=True)  # Önceden eğitilmiş ağırlıkları kullanıyoruz
         self.model.fc = nn.Linear(self.model.fc.in_features, 1)  # Çıktı boyutunu 1'e indiriyoruz
+        self.model.bn1 = nn.BatchNorm2d(64)  # BatchNorm ekledik
 
     def forward(self, x):
-        return torch.sigmoid(self.model(x))
+        x = self.model(x)
+        return torch.sigmoid(x)  # Sigmoid fonksiyonunu burada uyguluyoruz
 
 # Modeli oluşturuyoruz
 model = DeepFakeDetector()
@@ -65,8 +65,15 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
 
 # Kayıp fonksiyonu ve optimizer
-criterion = nn.BCELoss()  # Binary Cross-Entropy Loss
-optimizer = optim.Adam(model.parameters(), lr=0.0001)
+criterion = nn.BCELoss()  # BCEWithLogitsLoss yerine BCELoss kullanıyoruz
+optimizer = optim.Adam(model.parameters(), lr=0.0001)  # Öğrenme oranını biraz düşürdük
+
+# Modelin ağırlıklarını düzgün bir şekilde başlatma
+def init_weights(m):
+    if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+        nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+
+model.apply(init_weights)
 
 # Eğitim döngüsü
 def train_model():
@@ -77,7 +84,7 @@ def train_model():
     all_preds = []
     all_labels = []
 
-    for inputs, labels in tqdm(train_loader):
+    for inputs, labels in tqdm(train_loader, desc="Training Epoch"):
         inputs, labels = inputs.to(device), labels.to(device)
 
         optimizer.zero_grad()
@@ -119,7 +126,7 @@ def test_model():
     all_labels = []
 
     with torch.no_grad():
-        for inputs, labels in tqdm(test_loader):
+        for inputs, labels in tqdm(test_loader, desc="Testing Epoch"):
             inputs, labels = inputs.to(device), labels.to(device)
 
             outputs = model(inputs)
@@ -147,11 +154,11 @@ def test_model():
     return avg_loss, accuracy, precision, recall, f1
 
 # Çıktıları dosyaya yazmak için
-def save_metrics_to_excel(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
-                         test_loss, test_accuracy, test_precision, test_recall, test_f1, filename="metrics.xlsx"):
+def save_metrics_to_file(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
+                         test_loss, test_accuracy, test_precision, test_recall, test_f1, filename="metrics.csv"):
     # Metrikleri bir sözlükte topluyoruz
     metrics = {
-        'Epoch': [epoch],
+        'Epoch': [epoch+1],
         'Train Loss': [round(train_loss, 2)],
         'Train Accuracy': [round(train_accuracy, 2)],
         'Train Precision': [round(train_precision, 2)],
@@ -167,20 +174,11 @@ def save_metrics_to_excel(epoch, train_loss, train_accuracy, train_precision, tr
     # Pandas DataFrame oluşturuyoruz
     df = pd.DataFrame(metrics)
 
-    # Excel dosyasını kontrol ediyoruz
-    try:
-        # Dosyayı açıyoruz, eğer varsa
-        book = load_workbook(filename)
-        writer = pd.ExcelWriter(filename, engine='openpyxl')
-        writer.book = book
-        df.to_excel(writer, index=False, header=False, startrow=book.active.max_row)
-        writer.save()
-    except FileNotFoundError:
-        # Dosya yoksa yeni oluşturuyoruz
-        df.to_excel(filename, index=False)
+    # Eğer dosya yoksa, başlıkları yazıyoruz; varsa, ekliyoruz
+    df.to_csv(filename, mode='a', header=not pd.io.common.file_exists(filename), index=False)
 
 # Modeli eğitiyoruz ve doğruluyoruz
-num_epochs = 20
+num_epochs = args.epochs  # Parametre olarak alınan epoch sayısı
 for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs}")
 
@@ -191,6 +189,6 @@ for epoch in range(num_epochs):
     test_loss, test_accuracy, test_precision, test_recall, test_f1 = test_model()
 
     # Çıktıları dosyaya kaydediyoruz
-    save_metrics_to_excel(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
+    save_metrics_to_file(epoch, train_loss, train_accuracy, train_precision, train_recall, train_f1, 
                          test_loss, test_accuracy, test_precision, test_recall, test_f1)
     print(f"Epoch {epoch+1} metrikleri dosyaya kaydedildi.")
