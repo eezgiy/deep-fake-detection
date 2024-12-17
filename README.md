@@ -7,7 +7,7 @@ Datasets:
 * https://www.kaggle.com/datasets/ciplab/real-and-fake-face-detection
 * https://www.kaggle.com/code/krooz0/deep-fake-detection-on-images-and-videos/input?select=testvideos
 
-Different Models Such as ResNet, EfficientNet, Vgg16, MobileNet, CNN were used to train the models.
+Different models such as ResNet, EfficientNet, Vgg16, MobileNet, CNN were used to train the models.
 
 Data augumentation methodologies were used to balance the dataset.
 
